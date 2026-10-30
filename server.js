@@ -14,6 +14,27 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+// Native .env file loader (zero external dependency)
+const ENV_FILE = path.join(__dirname, '.env');
+if (fs.existsSync(ENV_FILE)) {
+  try {
+    const envRaw = fs.readFileSync(ENV_FILE, 'utf-8');
+    envRaw.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [k, ...v] = trimmed.split('=');
+        const key = k.trim();
+        const val = v.join('=').trim().replace(/^["']|["']$/g, '');
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Warning: Error reading .env file:', err.message);
+  }
+}
+
 const {
   autoCategorizeAndSummarize,
   detectDuplicate,
