@@ -71,8 +71,9 @@ async function runDiagnostic() {
   const startBalance = initialWallet.data.wallet.balance;
 
   const testUniqueTag = Date.now();
-  const testTitle = `Severe road collapse with deep sinkhole crater on Ring Road [REF-${testUniqueTag}]`;
-  const testDesc = `Deep asphalt road collapse and sinkhole crater near primary school, fatal accident danger for vehicles #${testUniqueTag}`;
+  const testStreet = `Skyline Avenue ${testUniqueTag}`;
+  const testTitle = `Damaged tarmac obstruction blocking emergency access [REF-${testUniqueTag}]`;
+  const testDesc = `Severe asphalt pavement rupture blocking ambulance access lane near hospital emergency wing #${testUniqueTag}`;
 
   const resPost = await req({
     path: '/api/reports',
@@ -82,7 +83,7 @@ async function runDiagnostic() {
     title: testTitle,
     description: testDesc,
     category: 'damaged roads',
-    location: { street: `Ring Road ${testUniqueTag.toString().slice(-4)}`, area: 'North Ward', landmark: `Near School Gate #${testUniqueTag.toString().slice(-3)}` }
+    location: { street: testStreet, area: 'North Ward', landmark: `City General Hospital Gate #${testUniqueTag.toString().slice(-3)}` }
   });
 
   const postPassed = resPost.status === 201 &&
@@ -159,7 +160,7 @@ async function runDiagnostic() {
     title: testTitle,
     description: testDesc,
     category: 'damaged roads',
-    location: { street: `Ring Road ${testUniqueTag.toString().slice(-4)}`, area: 'North Ward', landmark: `Near School Gate #${testUniqueTag.toString().slice(-3)}` }
+    location: { street: testStreet, area: 'North Ward', landmark: `Near School Gate #${testUniqueTag.toString().slice(-3)}` }
   });
 
   const isDupDetected = dupSubmission.status === 201 &&

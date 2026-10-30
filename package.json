@@ -6,14 +6,17 @@
   "scripts": {
     "start": "node server.js",
     "test": "node tests/run_all_tests.js",
-    "qa": "node tests/qa_diagnostic_test.js"
+    "qa": "node tests/qa_diagnostic_test.js",
+    "lint": "node --check server.js services/aiEngine.js middleware/security.js middleware/rateLimiter.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "compression": "^1.8.2",
     "cors": "^2.8.6",
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "helmet": "^8.3.0"
   }
 }

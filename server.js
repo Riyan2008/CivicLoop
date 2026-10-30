@@ -11,6 +11,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 
@@ -36,6 +37,28 @@ if (fs.existsSync(ENV_FILE)) {
 }
 
 const {
+  PORT,
+  WORKER_SECRET,
+  DEFAULT_USER_ID,
+  VALID_STATUSES,
+  REWARDS
+} = require('./config/constants');
+
+const {
+  helmetMiddleware,
+  requireWorkerAuth,
+  sanitizeInput,
+  preventPrototypePollution,
+  preventParameterPollution
+} = require('./middleware/security');
+
+const {
+  globalApiLimiter,
+  submissionLimiter,
+  mutationLimiter
+} = require('./middleware/rateLimiter');
+
+const {
   autoCategorizeAndSummarize,
   detectDuplicate,
   evaluatePrioritization,
@@ -43,27 +66,39 @@ const {
 } = require('./services/aiEngine');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Security and Parsing Middleware
+// High-Performance Compression (Gzip / Deflate for fast TTFB)
+app.use(compression());
+
+// Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, HSTS)
+app.use(helmetMiddleware);
+
+// Cross-Origin Resource Sharing
 app.use(cors());
+
+// Body Parsing & Prototype Injection Guards
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(preventPrototypePollution);
+app.use(preventParameterPollution);
 
-// Disable client caching for static files and APIs to ensure instant updates
-app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.set('Pragma', 'no-cache');
-  res.set('Expires', '0');
-  res.set('Surrogate-Control', 'no-store');
+// Static Asset Serving with ETag & 1-day Caching
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true
+}));
+
+// Dynamic API Caching & Rate Limiting Policy
+app.use('/api', globalApiLimiter);
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, max-age=2, stale-while-revalidate=10');
+  } else {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
   next();
 });
-
-// Serve static frontend files from public directory
-app.use(express.static(path.join(__dirname, 'public'), {
-  etag: false,
-  lastModified: false
-}));
 
 // Storage & Upload File Paths
 const DATA_DIR = path.join(__dirname, 'data');
@@ -84,10 +119,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 if (fs.existsSync(DATA_FILE) && !fs.existsSync(BACKUP_FILE)) {
   fs.copyFileSync(DATA_FILE, BACKUP_FILE);
 }
-
-// Default Citizen Context & Worker Credentials
-const DEFAULT_USER_ID = 'CITIZEN-CURRENT';
-const MUNICIPAL_WORKER_KEY = process.env.WORKER_SECRET || 'civicloop-field-worker-2026';
 
 // Initialize Wallets Ledger if not exists
 if (!fs.existsSync(WALLETS_FILE)) {
@@ -122,8 +153,20 @@ if (!fs.existsSync(WALLETS_FILE)) {
 // ==============================================================
 let memoryReports = null;
 let memoryWallets = null;
+const memoryReportMap = new Map();
 let pendingReportsFlush = false;
 let pendingWalletsFlush = false;
+
+function syncReportMap() {
+  memoryReportMap.clear();
+  if (Array.isArray(memoryReports)) {
+    for (const report of memoryReports) {
+      if (report && report.id) {
+        memoryReportMap.set(report.id.toLowerCase(), report);
+      }
+    }
+  }
+}
 
 function loadStorageCache() {
   try {
@@ -138,6 +181,8 @@ function loadStorageCache() {
     console.error('[CivicLoop Storage Error] Failed reading reports into memory:', err.message);
     memoryReports = [];
   }
+
+  syncReportMap();
 
   try {
     if (fs.existsSync(WALLETS_FILE)) {
@@ -165,6 +210,17 @@ function getReports() {
 }
 
 /**
+ * O(1) Instant Hash Map lookup by ticket ID
+ * @param {string} id Ticket reference ID
+ * @returns {Object|null}
+ */
+function getReportById(id) {
+  if (!id || typeof id !== 'string') return null;
+  if (!memoryReports) loadStorageCache();
+  return memoryReportMap.get(id.toLowerCase()) || null;
+}
+
+/**
  * Asynchronously flushes memory cache to disk without blocking the event loop
  */
 function flushReportsToDisk() {
@@ -188,6 +244,7 @@ function flushReportsToDisk() {
  */
 function saveReports(reports) {
   memoryReports = reports;
+  syncReportMap();
   flushReportsToDisk();
   return true;
 }
@@ -229,25 +286,6 @@ function saveWallets(wallets) {
   return true;
 }
 
-// ==============================================================
-// SECURITY DEFENSE: XSS SANITIZATION & SAFE DISK UPLOADS
-// ==============================================================
-
-/**
- * Strict Input Sanitization to strip potential XSS & script injection
- * @param {string} str Input string
- * @param {number} maxLen Maximum allowable length
- * @returns {string} Sanitized string
- */
-function sanitizeInput(str, maxLen = 500) {
-  if (typeof str !== 'string') return '';
-  return str
-    .replace(/[<>]/g, '') // Strip HTML tags
-    .replace(/javascript:/gi, '') // Strip javascript: URLs
-    .trim()
-    .slice(0, maxLen);
-}
-
 /**
  * Converts Base64 data URLs to static disk image files
  * Keeps JSON database lightweight (<60 KB) and avoids memory overload
@@ -282,47 +320,6 @@ function processAndSaveImage(rawImg, prefix = 'incident') {
   }
 
   return rawImg;
-}
-
-/**
- * Role-Based Worker Authentication Guard:
- * Restricts municipal status updates to authorized field staff.
- */
-function requireWorkerAuth(req, res, next) {
-  const authKey = req.headers['x-worker-key'] || req.headers['authorization'] || req.query.workerKey;
-  const isDashboardReferer = req.headers['x-requested-from'] === 'admin-portal' ||
-                             (req.headers['referer'] && req.headers['referer'].includes('admin.html'));
-
-  if (authKey === MUNICIPAL_WORKER_KEY || isDashboardReferer) {
-    return next();
-  }
-
-  return res.status(401).json({
-    success: false,
-    message: 'Security Alert: Valid municipal field worker credentials (X-Worker-Key) required.'
-  });
-}
-
-/**
- * Rate Limiter to prevent automated DOS spamming
- */
-const submissionTracker = new Map();
-function rateLimitSubmissions(req, res, next) {
-  const clientIp = req.ip || req.connection?.remoteAddress || 'client';
-  const now = Date.now();
-  const history = submissionTracker.get(clientIp) || [];
-  const recent = history.filter(t => now - t < 60000);
-
-  if (recent.length >= 30) {
-    return res.status(429).json({
-      success: false,
-      message: 'Rate limit exceeded: Maximum 30 complaints per minute. Please try again later.'
-    });
-  }
-
-  recent.push(now);
-  submissionTracker.set(clientIp, recent);
-  next();
 }
 
 /**
@@ -408,9 +405,29 @@ app.get('/api/reports', (req, res) => {
       return timeB - timeA;
     });
 
+    const totalCount = reports.length;
+
+    // Optional pagination support for high-throughput clients
+    if (req.query.limit && req.query.limit !== 'all') {
+      const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const limitNum = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 50));
+      const start = (pageNum - 1) * limitNum;
+      const paginatedReports = reports.slice(start, start + limitNum);
+
+      return res.json({
+        success: true,
+        count: paginatedReports.length,
+        total: totalCount,
+        page: pageNum,
+        totalPages: Math.ceil(totalCount / limitNum),
+        reports: paginatedReports
+      });
+    }
+
     res.json({
       success: true,
       count: reports.length,
+      total: totalCount,
       reports
     });
   } catch (error) {
@@ -424,12 +441,11 @@ app.get('/api/reports', (req, res) => {
 
 /**
  * GET /api/reports/:id
- * Retrieve a single report by ticket ID
+ * Retrieve a single report by ticket ID (O(1) hash map lookup)
  */
 app.get('/api/reports/:id', (req, res) => {
   try {
-    const reports = getReports();
-    const report = reports.find(r => r.id && r.id.toLowerCase() === req.params.id.toLowerCase());
+    const report = getReportById(req.params.id);
 
     if (!report) {
       return res.status(404).json({
@@ -458,7 +474,7 @@ app.get('/api/reports/:id', (req, res) => {
  * 3. Explainable prioritization & safety severity scoring
  * 4. Automatic token reward crediting to Citizen Civic Wallet
  */
-app.post('/api/reports', rateLimitSubmissions, (req, res) => {
+app.post('/api/reports', submissionLimiter, (req, res) => {
   try {
     const {
       title,
@@ -597,22 +613,20 @@ app.post('/api/reports', rateLimitSubmissions, (req, res) => {
  * - Record field inspection notes
  * - Automatically award +100 bonus tokens to citizen upon resolution
  */
-app.patch('/api/reports/:id/status', requireWorkerAuth, (req, res) => {
+app.patch('/api/reports/:id/status', mutationLimiter, requireWorkerAuth, (req, res) => {
   try {
     const { id } = req.params;
     const { status, assignedDepartment, resolutionNotes, resolvedImageUrl } = req.body;
 
     const reports = getReports();
-    const index = reports.findIndex(r => r.id && r.id.toLowerCase() === id.toLowerCase());
+    const report = getReportById(id);
 
-    if (index === -1) {
+    if (!report) {
       return res.status(404).json({
         success: false,
         message: `Report ticket #${id} not found.`
       });
     }
-
-    const report = reports[index];
     const oldStatus = report.status;
 
     const validStatuses = ['Submitted', 'In Progress', 'Resolved'];
@@ -653,7 +667,6 @@ app.patch('/api/reports/:id/status', requireWorkerAuth, (req, res) => {
       );
     }
 
-    reports[index] = report;
     saveReports(reports);
 
     res.json({
