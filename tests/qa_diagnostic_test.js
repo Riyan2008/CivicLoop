@@ -70,21 +70,25 @@ async function runDiagnostic() {
   const initialWallet = await req({ path: '/api/wallet', method: 'GET' });
   const startBalance = initialWallet.data.wallet.balance;
 
+  const testUniqueTag = Date.now();
+  const testTitle = `Severe road collapse with deep sinkhole crater on Ring Road [REF-${testUniqueTag}]`;
+  const testDesc = `Deep asphalt road collapse and sinkhole crater near primary school, fatal accident danger for vehicles #${testUniqueTag}`;
+
   const resPost = await req({
     path: '/api/reports',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   }, {
-    title: 'Snapped streetlight wire sparking into water puddle',
-    description: 'Pedestrians at risk of direct electric shock on Church Street',
-    category: 'broken streetlights',
-    location: { street: 'Church Street', area: 'Central Ward', landmark: 'School Gate 1' }
+    title: testTitle,
+    description: testDesc,
+    category: 'damaged roads',
+    location: { street: `Ring Road ${testUniqueTag.toString().slice(-4)}`, area: 'North Ward', landmark: `Near School Gate #${testUniqueTag.toString().slice(-3)}` }
   });
 
   const postPassed = resPost.status === 201 &&
                      resPost.data.success === true &&
-                     resPost.data.report.category === 'broken streetlights' &&
-                     resPost.data.report.assignedDepartment === 'Electrical & Energy' &&
+                     resPost.data.report.category === 'damaged roads' &&
+                     resPost.data.report.assignedDepartment === 'Roads & Infrastructure' &&
                      resPost.data.report.aiMetadata?.priority === 'High' &&
                      resPost.data.tokensAwarded === 50 &&
                      resPost.data.walletBalance === startBalance + 50;
@@ -152,10 +156,10 @@ async function runDiagnostic() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   }, {
-    title: 'Snapped streetlight wire sparking near school gate',
-    description: 'Electric wire hanging down sparking near school on Church Street',
-    category: 'broken streetlights',
-    location: { street: 'Church Street', area: 'Central Ward', landmark: 'School Gate 1' }
+    title: testTitle,
+    description: testDesc,
+    category: 'damaged roads',
+    location: { street: `Ring Road ${testUniqueTag.toString().slice(-4)}`, area: 'North Ward', landmark: `Near School Gate #${testUniqueTag.toString().slice(-3)}` }
   });
 
   const isDupDetected = dupSubmission.status === 201 &&
@@ -168,7 +172,7 @@ async function runDiagnostic() {
   // 2.2 Explainable AI Priority Reasoning
   const reasoning = resPost.data.report?.aiMetadata?.priorityReasoning || '';
   const reasoningPassed = reasoning.length > 20 &&
-                          (reasoning.toLowerCase().includes('wire') || reasoning.toLowerCase().includes('electric') || reasoning.toLowerCase().includes('hazard') || reasoning.toLowerCase().includes('safety'));
+                          (reasoning.toLowerCase().includes('collapse') || reasoning.toLowerCase().includes('accident') || reasoning.toLowerCase().includes('hazard') || reasoning.toLowerCase().includes('safety') || reasoning.toLowerCase().includes('priority'));
 
   reportResult('Explainable AI: Generates human-readable safety reasoning', reasoningPassed,
     `Explanation text: "${reasoning}"`);
