@@ -1,0 +1,170 @@
+{
+  "CITIZEN-CURRENT": {
+    "userId": "CITIZEN-CURRENT",
+    "userName": "Civic Citizen",
+    "balance": 730,
+    "transactions": [
+      {
+        "id": "TXN-375526",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1051",
+        "timestamp": "2026-10-30T09:59:35.526Z"
+      },
+      {
+        "id": "TXN-367671",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1050",
+        "timestamp": "2026-10-30T09:59:27.671Z"
+      },
+      {
+        "id": "TXN-367664",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1049",
+        "timestamp": "2026-10-30T09:59:27.664Z"
+      },
+      {
+        "id": "TXN-367656",
+        "type": "CREDIT",
+        "amount": 50,
+        "reason": "Verified New Civic Complaint (+50 coins) for #REP-1049",
+        "timestamp": "2026-10-30T09:59:27.656Z"
+      },
+      {
+        "id": "TXN-674066",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1049",
+        "timestamp": "2026-10-30T09:47:54.066Z"
+      },
+      {
+        "id": "TXN-326047",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1048",
+        "timestamp": "2026-10-30T09:42:06.047Z"
+      },
+      {
+        "id": "TXN-137966",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1047",
+        "timestamp": "2026-10-30T09:38:57.966Z"
+      },
+      {
+        "id": "TXN-041518",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1046",
+        "timestamp": "2026-10-30T09:37:21.518Z"
+      },
+      {
+        "id": "TXN-954988",
+        "type": "CREDIT",
+        "amount": 50,
+        "reason": "Verified New Civic Complaint (+50 coins) for #REP-1045",
+        "timestamp": "2026-10-30T09:35:54.988Z"
+      },
+      {
+        "id": "TXN-612902",
+        "type": "CREDIT",
+        "amount": 50,
+        "reason": "Verified New Civic Complaint (+50 coins) for #REP-1044",
+        "timestamp": "2026-10-30T09:13:32.902Z"
+      },
+      {
+        "id": "TXN-115495",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1043",
+        "timestamp": "2026-10-30T08:48:35.495Z"
+      },
+      {
+        "id": "TXN-953998",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1042",
+        "timestamp": "2026-10-30T06:32:33.998Z"
+      },
+      {
+        "id": "TXN-249027",
+        "type": "CREDIT",
+        "amount": 10,
+        "reason": "Corroboration Bonus (+10 coins) for #REP-1042",
+        "timestamp": "2026-10-30T06:04:09.027Z"
+      },
+      {
+        "id": "TXN-056016",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1041",
+        "timestamp": "2026-10-30T05:44:16.016Z"
+      },
+      {
+        "id": "TXN-948244",
+        "type": "CREDIT",
+        "amount": 50,
+        "reason": "Verified New Civic Complaint (+50 coins) for #REP-1041",
+        "timestamp": "2026-10-30T05:42:28.244Z"
+      },
+      {
+        "id": "TXN-901",
+        "type": "CREDIT",
+        "amount": 50,
+        "reason": "Report validated (REP-1025)",
+        "timestamp": "2026-10-26T06:05:00.000Z"
+      },
+      {
+        "id": "TXN-902",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Resolution Verified Bonus (REP-1025)",
+        "timestamp": "2026-10-26T14:32:00.000Z"
+      }
+    ]
+  },
+  "CITIZEN-106": {
+    "userId": "CITIZEN-106",
+    "userName": "Civic Contributor",
+    "balance": 100,
+    "transactions": [
+      {
+        "id": "TXN-998980",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1006",
+        "timestamp": "2026-10-30T06:33:18.980Z"
+      }
+    ]
+  },
+  "CITIZEN-112": {
+    "userId": "CITIZEN-112",
+    "userName": "Civic Contributor",
+    "balance": 100,
+    "transactions": [
+      {
+        "id": "TXN-012590",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1012",
+        "timestamp": "2026-10-30T06:33:32.590Z"
+      }
+    ]
+  },
+  "CITIZEN-140": {
+    "userId": "CITIZEN-140",
+    "userName": "Civic Contributor",
+    "balance": 100,
+    "transactions": [
+      {
+        "id": "TXN-073330",
+        "type": "CREDIT",
+        "amount": 100,
+        "reason": "Civic Resolution Verified Bonus (+100 coins) for #REP-1040",
+        "timestamp": "2026-10-30T06:34:33.330Z"
+      }
+    ]
+  }
+}

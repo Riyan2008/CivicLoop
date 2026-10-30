@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicLoop | Municipal Authority Command & Field Dispatch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #475569;
+      border-radius: 9999px;
+    }
+    .img-zoom-hover {
+      transition: transform 0.25s ease;
+    }
+    .img-zoom-hover:hover {
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Floating Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <a href="/admin.html" class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-teal-500 to-emerald-500 flex items-center justify-center text-white font-black text-xl shadow-md transition transform hover:scale-105">
+          CL
+        </a>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xl font-extrabold text-white tracking-tight">CivicLoop <span class="text-emerald-400">Worker Command</span></span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-900/60 text-blue-300 rounded border border-blue-700/60 uppercase">Field Operations</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Visual Triage • Photo Evidence • Instant Worker Dispatch</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- View Mode Switcher -->
+        <div class="hidden md:flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+          <button id="viewBtnCards" onclick="setViewMode('cards')" class="px-3 py-1.5 rounded-lg transition bg-emerald-600 text-white shadow">
+            🎴 Worker Cards
+          </button>
+          <button id="viewBtnTable" onclick="setViewMode('table')" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+            📋 Table List
+          </button>
+        </div>
+
+        <!-- Live Sync Control with Real-Time Feedback -->
+        <div class="flex items-center space-x-2">
+          <button id="syncBtn" onclick="manualSync()" title="Refresh live complaints from server" class="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3.5 py-2 rounded-xl border border-slate-700 hover:border-emerald-500/60 transition flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+            <span id="syncIcon" class="inline-block transition-transform duration-300">🔄</span>
+            <span id="syncText">Sync</span>
+          </button>
+          <span id="lastSyncBadge" class="hidden sm:inline-block text-[11px] text-slate-400 font-mono bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+            Synced: Just now
+          </span>
+        </div>
+        <a href="/index.html" class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs">
+          <span>Citizen App</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metric KPIs -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      
+      <!-- Metric 1: Total -->
+      <div class="bg-slate-900/90 p-4 rounded-3xl border border-slate-800 hover:border-slate-700 transition">
+        <span class="text-xs text-slate-400 block font-semibold">Total Complaints</span>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span id="metricTotal" class="text-2xl sm:text-3xl font-black text-white">40</span>
+          <span class="text-[11px] text-slate-400 font-mono">Tickets</span>
+        </div>
+        <span class="text-[10px] text-emerald-400 block mt-1 font-bold">Full Ward Scope</span>
+      </div>
+
+      <!-- Metric 2: Active Pending -->
+      <div class="bg-slate-900/90 p-4 rounded-3xl border border-amber-900/40 bg-gradient-to-b from-slate-900 to-amber-950/20 hover:border-amber-700/60 transition">
+        <span class="text-xs text-amber-300 block font-semibold">Pending Action</span>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span id="metricPending" class="text-2xl sm:text-3xl font-black text-amber-400">33</span>
+          <span class="text-[11px] text-amber-300 font-mono">Need Crew</span>
+        </div>
+        <span class="text-[10px] text-amber-400 block mt-1 font-bold">Queued for Dispatch</span>
+      </div>
+
+      <!-- Metric 3: Critical Hazards -->
+      <div class="bg-slate-900/90 p-4 rounded-3xl border border-rose-900/40 bg-gradient-to-b from-slate-900 to-rose-950/20 hover:border-rose-700/60 transition">
+        <span class="text-xs text-rose-300 block font-semibold">Life Safety Hazards</span>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span id="metricHighHazards" class="text-2xl sm:text-3xl font-black text-rose-500">14</span>
+          <span class="text-[11px] text-rose-300 font-bold font-mono">High Urgency</span>
+        </div>
+        <span class="text-[10px] text-rose-400 block mt-1 font-bold">Immediate Crew Priority</span>
+      </div>
+
+      <!-- Metric 4: Multiple People Reported -->
+      <div class="bg-slate-900/90 p-4 rounded-3xl border border-purple-900/40 bg-gradient-to-b from-slate-900 to-purple-950/20 hover:border-purple-700/60 transition">
+        <span class="text-xs text-purple-300 block font-semibold">Multi-Reported (Crowd)</span>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span id="metricDuplicates" class="text-2xl sm:text-3xl font-black text-purple-400">11</span>
+          <span class="text-[11px] text-purple-300 font-mono" id="metricDupRate">28%</span>
+        </div>
+        <span class="text-[10px] text-purple-300 block mt-1 font-bold">Grouped into Parent Issues</span>
+      </div>
+
+      <!-- Metric 5: Resolved Rate -->
+      <div class="bg-slate-900/90 p-4 rounded-3xl border border-emerald-900/40 bg-gradient-to-b from-slate-900 to-emerald-950/20 hover:border-emerald-700/60 transition">
+        <span class="text-xs text-emerald-300 block font-semibold">Completed Works</span>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span id="metricResolutionRate" class="text-2xl sm:text-3xl font-black text-emerald-400">18%</span>
+          <span class="text-[11px] text-slate-400 font-mono" id="metricResolvedCount">7 Done</span>
+        </div>
+        <span class="text-[10px] text-emerald-400 block mt-1 font-bold">Citizen Tokens Awarded</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- UPPER SECTION: RECENTLY UPDATED & NEW PROBLEMS (USER MANDATE)  -->
+  <!-- ============================================================== -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full">
+    <div class="bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-900 rounded-3xl p-5 border border-slate-800 shadow-xl space-y-3.5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <span class="flex h-3 w-3 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <h2 class="text-base sm:text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
+            <span>🕒 Upper Section: Recently Updated &amp; New Complaints</span>
+          </h2>
+          <span class="text-[11px] font-bold bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-800">
+            Real-Time Feed
+          </span>
+        </div>
+        <span class="text-xs text-slate-400">
+          Showing latest activities across citizen reports &amp; crew updates
+        </span>
+      </div>
+
+      <!-- Recently Updated Grid (Cards with Photos & Quick Status) -->
+      <div id="recentlyUpdatedContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- Rendered dynamically via JavaScript -->
+        <div class="col-span-full py-4 text-center text-xs text-slate-500">
+          Loading recently updated reports...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hotspot Surface Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 w-full space-y-3">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center space-x-2 tracking-tight">
+          <span>🔥 High-Impact Hotspot Clusters (Road Corridor Alerts)</span>
+        </h2>
+        <p class="text-xs text-slate-400">Radius clusters identifying systemic infrastructure failures (e.g., MG Road).</p>
+      </div>
+      <span class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700 font-mono" id="clusterCountDisplay">
+        Zones: Loading...
+      </span>
+    </div>
+
+    <!-- Hotspot Cards Grid -->
+    <div id="hotspotContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <!-- Injected via JavaScript -->
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- MAIN COMPLAINT QUEUE: CARDS & TABLE FOR WORKERS                -->
+  <!-- ============================================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex-1 space-y-4">
+    <div class="bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-800 shadow-2xl space-y-5">
+      
+      <!-- Filter Bar & Search -->
+      <div class="space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+              <span>📋 All Complaints &amp; Work Orders</span>
+              <span id="queueBadgeTotal" class="text-xs font-bold bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-700">40</span>
+            </h2>
+            <p class="text-xs text-slate-400">Every card shows photo evidence, location, citizen report count, and 1-click status updater.</p>
+          </div>
+
+          <!-- Search Input & Quick Controls -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="relative">
+              <input type="text" id="adminSearch" placeholder="Search ID, title, street, keyword..." oninput="applyFilters()"
+                class="bg-slate-950 border border-slate-700 text-xs text-slate-200 pl-8 pr-3.5 py-2.5 rounded-xl w-60 sm:w-64 focus:ring-2 focus:ring-emerald-500 outline-none">
+              <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            <!-- Sort dropdown -->
+            <select id="sortOrder" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="recent">🕒 Recently Updated (Default)</option>
+              <option value="newest">🆕 Newest Submitted</option>
+              <option value="mostReported">👥 Most People Reported</option>
+              <option value="urgency">🚨 Highest Urgency First</option>
+              <option value="street">📍 Street Name (A-Z)</option>
+            </select>
+
+            <button onclick="clearFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2.5 rounded-xl transition cursor-pointer font-semibold">
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Status Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 text-xs">
+          <button onclick="setFilterQuick('all')" id="pillAll" class="px-3.5 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow transition whitespace-nowrap">
+            All Issues (<span id="countPillAll">40</span>)
+          </button>
+          <button onclick="setFilterQuick('high')" id="pillHigh" class="px-3.5 py-1.5 rounded-xl font-bold bg-slate-800 hover:bg-rose-950 hover:text-rose-200 text-slate-300 border border-slate-700 transition whitespace-nowrap">
+            🚨 Life Hazards (<span id="countPillHigh">14</span>)
+          </button>
+          <button onclick="setFilterQuick('multiReported')" id="pillMulti" class="px-3.5 py-1.5 rounded-xl font-bold bg-slate-800 hover:bg-purple-950 hover:text-purple-200 text-slate-300 border border-slate-700 transition whitespace-nowrap">
+            📢 Multiple Reports (<span id="countPillMulti">11</span>)
+          </button>
+          <button onclick="setFilterQuick('pending')" id="pillPending" class="px-3.5 py-1.5 rounded-xl font-bold bg-slate-800 hover:bg-amber-950 hover:text-amber-200 text-slate-300 border border-slate-700 transition whitespace-nowrap">
+            ⏳ Pending Action (<span id="countPillPending">33</span>)
+          </button>
+          <button onclick="setFilterQuick('resolved')" id="pillResolved" class="px-3.5 py-1.5 rounded-xl font-bold bg-slate-800 hover:bg-emerald-950 hover:text-emerald-200 text-slate-300 border border-slate-700 transition whitespace-nowrap">
+            ✅ Resolved (<span id="countPillResolved">7</span>)
+          </button>
+        </div>
+
+        <!-- Detailed Filter Dropdowns Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <!-- Category Filter -->
+          <select id="filterCategory" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 text-slate-200 px-3 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-emerald-500">
+            <option value="">All Categories</option>
+            <option value="damaged roads">Damaged Roads</option>
+            <option value="waterlogging">Waterlogging</option>
+            <option value="broken streetlights">Broken Streetlights</option>
+            <option value="waste bins">Waste Bins</option>
+          </select>
+
+          <!-- Status Filter -->
+          <select id="filterStatus" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 text-slate-200 px-3 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-emerald-500">
+            <option value="">All Statuses</option>
+            <option value="Submitted">Submitted (New)</option>
+            <option value="In Progress">In Progress (Squad)</option>
+            <option value="Resolved">Resolved (Completed)</option>
+          </select>
+
+          <!-- Department Filter -->
+          <select id="filterDept" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 text-slate-200 px-3 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-emerald-500">
+            <option value="">All Departments</option>
+            <option value="Roads & Infrastructure">Roads &amp; Infrastructure</option>
+            <option value="Water & Sewerage">Water &amp; Sewerage</option>
+            <option value="Electrical & Energy">Electrical &amp; Energy</option>
+            <option value="Solid Waste Management">Solid Waste Management</option>
+            <option value="Traffic Management">Traffic Management</option>
+          </select>
+
+          <!-- Street Filter -->
+          <select id="filterStreet" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 text-slate-200 px-3 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-emerald-500">
+            <option value="">All Streets</option>
+            <option value="MG Road">MG Road (Hotspot)</option>
+            <option value="100 Feet Road">100 Feet Road</option>
+            <option value="Church Street">Church Street</option>
+            <option value="Residency Road">Residency Road</option>
+            <option value="Victoria Road">Victoria Road</option>
+            <option value="Russell Street">Russell Street</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- View 1: WORKER CARDS VIEW (DEFAULT - LARGE PHOTOS, UP-LEFT MULTI-REPORT BOX) -->
+      <div id="cardsViewContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- View 2: SUPERVISOR TABLE VIEW (ALTERNATIVE LIST) -->
+      <div id="tableViewContainer" class="hidden overflow-x-auto custom-scrollbar border border-slate-800 rounded-2xl">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 text-[11px]">
+            <tr>
+              <th class="py-3 px-3">Photo</th>
+              <th class="py-3 px-3">Report Details</th>
+              <th class="py-3 px-3">People Reported</th>
+              <th class="py-3 px-3">Location</th>
+              <th class="py-3 px-3">Priority</th>
+              <th class="py-3 px-3">Status &amp; Dept</th>
+              <th class="py-3 px-3 text-right">Quick Dispatch</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTableBody" class="divide-y divide-slate-800/60">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table/Card Footer summary -->
+      <div class="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80 gap-2">
+        <span id="tableCountDisplay">Showing 40 reports</span>
+        <span class="text-emerald-400 font-semibold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>1-click status actions sync instantly to Citizen Portal &amp; award tokens</span>
+        </span>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1: FULL PHOTO ZOOM LIGHTBOX (ADMIN SEES HIGH-RES IMAGE)   -->
+  <!-- ============================================================== -->
+  <div id="photoLightboxModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center p-4" onclick="closePhotoModal()">
+    <div class="relative bg-slate-900 rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-150" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="space-y-0.5">
+          <div class="flex items-center space-x-2">
+            <span class="font-mono font-black text-emerald-400 text-sm" id="lightboxTicketId">REP-1001</span>
+            <span class="text-xs font-bold text-slate-200" id="lightboxTitle">Problem Title</span>
+          </div>
+          <p class="text-[11px] text-slate-400" id="lightboxLocation">Street Location</p>
+        </div>
+        <button onclick="closePhotoModal()" aria-label="Close photo inspection modal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold text-lg cursor-pointer">
+          &times;
+        </button>
+      </div>
+
+      <!-- Single Photo Preview (when uncompleted) -->
+      <div id="lightboxSingleContainer" class="w-full max-h-[70vh] overflow-hidden rounded-2xl border border-slate-800 flex items-center justify-center bg-black">
+        <img id="lightboxImg" src="" alt="Full incident evidence photo" class="max-h-[68vh] w-auto max-w-full object-contain">
+      </div>
+
+      <!-- Before & After Verification Split View (when resolved with photo proof) -->
+      <div id="lightboxSplitContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-extrabold text-rose-400 flex items-center gap-1.5">
+              <span>🚨 BEFORE</span>
+              <span class="text-[10px] bg-rose-950 px-2 py-0.5 rounded text-rose-300 border border-rose-800">Reported Evidence</span>
+            </span>
+          </div>
+          <div class="w-full h-80 rounded-2xl overflow-hidden border border-slate-800 bg-black flex items-center justify-center">
+            <img id="lightboxBeforeSplitImg" src="" alt="Before Fix" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-extrabold text-emerald-400 flex items-center gap-1.5">
+              <span>✅ AFTER</span>
+              <span class="text-[10px] bg-emerald-950 px-2 py-0.5 rounded text-emerald-300 border border-emerald-800">Fixed by Municipal Squad</span>
+            </span>
+          </div>
+          <div class="w-full h-80 rounded-2xl overflow-hidden border border-emerald-700/80 bg-black flex items-center justify-center">
+            <img id="lightboxAfterSplitImg" src="" alt="After Fix Proof" class="w-full h-full object-cover">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+        <span id="lightboxDate">Captured on: 2026-10-30</span>
+        <button onclick="closePhotoModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-xl">
+          Close Inspection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: WORKFLOW & STATUS DISPATCH MODAL                      -->
+  <!-- ============================================================== -->
+  <div id="workflowModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-800 space-y-5 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="space-y-0.5">
+          <div class="flex items-center space-x-2">
+            <span class="font-mono font-black text-white text-base" id="modalTicketId">REP-1001</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-800 text-slate-300" id="modalTicketCategory">Category</span>
+          </div>
+          <span class="text-xs text-slate-400">Municipal Action &amp; Status Transition</span>
+        </div>
+        <button onclick="closeWorkflowModal()" class="text-slate-400 hover:text-white font-bold text-xl cursor-pointer">&times;</button>
+      </div>
+
+      <!-- Attached Photo in Modal so Worker can see what they're resolving -->
+      <div class="flex items-center space-x-3.5 p-3 rounded-2xl bg-slate-950 border border-slate-800">
+        <img id="modalTicketImg" src="" alt="Thumbnail" class="w-20 h-16 object-cover rounded-xl border border-slate-700 flex-shrink-0 cursor-pointer" onclick="openPhotoFromModal()">
+        <div class="min-w-0 flex-1">
+          <span class="font-bold text-slate-200 text-xs block truncate" id="modalTicketTitle">Issue Title</span>
+          <p class="text-slate-400 text-[11px] line-clamp-2 mt-0.5" id="modalTicketSummary">AI summary text...</p>
+          <span class="text-[10px] text-emerald-400 font-semibold cursor-pointer hover:underline" onclick="openPhotoFromModal()">🔍 Click image to zoom</span>
+        </div>
+      </div>
+
+      <form id="workflowForm" onsubmit="submitWorkflow(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            Update Workflow Status <span class="text-rose-400">*</span>
+          </label>
+          <select id="workflowStatus" class="w-full bg-slate-950 border border-slate-800 text-white px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="Submitted">Submitted (In Queue)</option>
+            <option value="In Progress">In Progress (Squad Dispatched)</option>
+            <option value="Resolved">Resolved (Work Completed)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            Assigned Department
+          </label>
+          <select id="workflowDepartment" class="w-full bg-slate-950 border border-slate-800 text-white px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="Roads & Infrastructure">Roads &amp; Infrastructure</option>
+            <option value="Water & Sewerage">Water &amp; Sewerage</option>
+            <option value="Electrical & Energy">Electrical &amp; Energy</option>
+            <option value="Solid Waste Management">Solid Waste Management</option>
+            <option value="Traffic Management">Traffic Management</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            Field Inspection &amp; Resolution Notes
+          </label>
+          <textarea id="workflowNotes" rows="2" placeholder="Document work order ID, asphalt tons applied, lineman inspection details, or completion notes..."
+            class="w-full bg-slate-950 border border-slate-800 text-white px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <!-- Before & After Resolution Proof Upload -->
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            📸 Attach Fixed Work Photo (Proof of Action)
+          </label>
+          <div class="flex items-center space-x-3">
+            <input type="file" id="resolvedPhotoInput" accept="image/*" class="hidden" onchange="handleResolvedPhoto(event)">
+            <button type="button" onclick="document.getElementById('resolvedPhotoInput').click()"
+              class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 cursor-pointer">
+              <span>📷 Select Fixed Photo</span>
+            </button>
+            <span id="resolvedPhotoPreviewName" class="text-[11px] text-slate-400 truncate max-w-xs">No photo attached</span>
+          </div>
+          <div id="resolvedPhotoPreviewContainer" class="hidden mt-2 relative w-32 h-20 rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
+            <img id="resolvedPhotoPreviewImg" src="" alt="Resolved Proof" class="w-full h-full object-cover">
+            <button type="button" onclick="removeResolvedPhoto()" class="absolute top-1 right-1 bg-rose-600 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center cursor-pointer">×</button>
+          </div>
+        </div>
+
+        <div class="p-3 bg-emerald-950/70 rounded-2xl border border-emerald-500/30 text-emerald-200 text-[11px] leading-snug">
+          🪙 <b>Resolution Incentive Protocol:</b> Transitioning status to <b>'Resolved'</b> automatically credits a <b>+100 Civic Coin bonus</b> to the citizen's wallet.
+        </div>
+
+        <div class="flex space-x-3 pt-2">
+          <button type="button" onclick="closeWorkflowModal()" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" id="saveWorkflowBtn" class="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl transition shadow-lg shadow-emerald-600/30 cursor-pointer">
+            Save Status &amp; Sync
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3: EXPLAINABLE AI REASONING TOOLTIP MODAL                -->
+  <!-- ============================================================== -->
+  <div id="reasoningModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <span>🧠 Explainable AI Priority Reasoning</span>
+        </h3>
+        <button onclick="closeReasoningModal()" aria-label="Close reasoning modal" class="text-slate-400 hover:text-white cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400">Calculated Urgency Score:</span>
+          <span id="reasoningScore" class="font-extrabold text-rose-400">88/100 (High Priority)</span>
+        </div>
+        <div class="p-3.5 bg-slate-950/90 rounded-2xl border border-slate-800 text-slate-200 leading-relaxed text-[11px]" id="reasoningText">
+          Reasoning text...
+        </div>
+      </div>
+
+      <button onclick="closeReasoningModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 4: CORROBORATING REPORTS (PEOPLE WHO REPORTED THIS)       -->
+  <!-- ============================================================== -->
+  <div id="corroborationModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <span>👥 Corroborating Citizen Reports (<span id="corrobCountDisplay">0</span> People)</span>
+        </h3>
+        <button onclick="closeCorroborationModal()" aria-label="Close corroboration modal" class="text-slate-400 hover:text-white cursor-pointer">&times;</button>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Multiple citizens flagged this incident near the same location. AI automatically grouped these tickets together:
+      </p>
+
+      <div id="corroborationList" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <button onclick="closeCorroborationModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODULAR JAVASCRIPT CONTROLLERS                                 -->
+  <!-- ============================================================== -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>

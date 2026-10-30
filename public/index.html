@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicLoop | Citizen Action & Civic Rewards Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+            civic: {
+              gold: '#f59e0b',
+              navy: '#0f172a',
+              accent: '#3b82f6'
+            }
+          },
+          animation: {
+            'shimmer': 'shimmer 2.5s infinite',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          },
+          keyframes: {
+            shimmer: {
+              '100%': { transform: 'translateX(100%)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Floating Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <a href="/" class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/25 transition transform hover:scale-105">
+          CL
+        </a>
+        <div>
+          <div class="flex items-center space-x-2">
+            <a href="/" class="text-xl font-extrabold text-slate-900 tracking-tight">Civic<span class="text-emerald-600">Loop</span></a>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200 uppercase tracking-wide">
+              Verified Prototype
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">From Complaints to Action • AI Triage & Civic Token Rewards</p>
+        </div>
+      </div>
+
+      <nav class="flex items-center space-x-2 sm:space-x-4">
+        <a href="#report-section" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-emerald-600 transition px-2.5 py-1.5 hidden md:block">Report Issue</a>
+        <a href="#tracking-section" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-emerald-600 transition px-2.5 py-1.5 hidden md:block">Track Status</a>
+        
+        <!-- Live Wallet Counter Pill -->
+        <a href="#wallet-section" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 rounded-2xl px-3 py-1.5 flex items-center space-x-1.5 transition shadow-xs">
+          <span class="text-base sm:text-lg">🪙</span>
+          <span id="navWalletBadge" class="font-extrabold text-xs sm:text-sm text-slate-900">150</span>
+          <span class="text-[10px] uppercase font-bold text-amber-700 hidden sm:inline">Coins</span>
+        </a>
+
+        <a href="/admin.html" class="inline-flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl transition shadow-sm">
+          <span>Authority Hub</span>
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-b from-emerald-50/70 via-slate-50/50 to-slate-50 pt-8 pb-10 border-b border-slate-200/70">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7 space-y-4">
+          <div class="inline-flex items-center space-x-2 bg-white px-3.5 py-1.5 rounded-full border border-emerald-200 text-xs font-bold text-emerald-800 shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span>Real-time municipal triage & civic token incentive system</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            Turn Civic Complaints into <br/>
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500">
+              Verified Action.
+            </span>
+          </h1>
+
+          <p class="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed">
+            Report infrastructure hazards in under 60 seconds. Our neural engine auto-summarizes, catches duplicates, flags safety hazards, and rewards you with redeemable Civic Coins.
+          </p>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <a href="#report-section" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-2xl transition shadow-lg shadow-emerald-600/25 inline-flex items-center space-x-2 text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+              <span>Submit Complaint (&lt; 1 min)</span>
+            </a>
+            <a href="#wallet-section" class="bg-white hover:bg-slate-100 text-slate-800 font-bold px-5 py-3 rounded-2xl border border-slate-300 transition inline-flex items-center space-x-2 text-sm shadow-xs">
+              <span>🪙 View Civic Wallet</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Live Impact Metric Widget -->
+        <div class="lg:col-span-5">
+          <div class="glass-card rounded-3xl p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Live Municipal Ward Scope</span>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200" id="activeHotspotsCount">
+                Loading hotspots...
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5 py-4">
+              <div class="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[11px] text-slate-500 block font-semibold">Total Logged Issues</span>
+                <span id="statTotalIssues" class="text-2xl font-black text-slate-900">40</span>
+                <span class="text-[10px] text-emerald-600 font-bold block mt-0.5">Synthetic Baseline</span>
+              </div>
+              <div class="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[11px] text-slate-500 block font-semibold">Civic Coins Disbursed</span>
+                <span id="statCoinsDisbursed" class="text-2xl font-black text-amber-600">2,350 🪙</span>
+                <span class="text-[10px] text-slate-500 font-semibold block mt-0.5">Citizen Incentives</span>
+              </div>
+              <div class="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[11px] text-slate-500 block font-semibold">AI Deduplication Rate</span>
+                <span class="text-2xl font-black text-blue-600" id="statDupRate">28%</span>
+                <span class="text-[10px] text-slate-500 font-semibold block mt-0.5">Spam Filtered</span>
+              </div>
+              <div class="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[11px] text-slate-500 block font-semibold">High Priority Hazards</span>
+                <span id="statHighHazards" class="text-2xl font-black text-rose-600">14</span>
+                <span class="text-[10px] text-rose-600 font-bold block mt-0.5">Immediate Dispatch</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-600 flex items-center justify-between pt-2.5 border-t border-slate-100">
+              <span>📍 Primary Hotspot: <b class="text-slate-900">MG Road Corridor</b></span>
+              <span class="text-emerald-700 font-bold text-[11px]">AI Engine Synced</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 flex-1 w-full">
+
+    <!-- Civic Wallet Section -->
+    <section id="wallet-section">
+      <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800">
+        <!-- Background Ambient Glow -->
+        <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute right-48 top-0 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="flex items-center space-x-2">
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                <span>⭐ Citizen Impact Wallet</span>
+              </span>
+              <span class="text-xs text-slate-400 font-mono">User ID: CITIZEN-CURRENT</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4">
+              <div class="flex items-center space-x-3">
+                <span class="text-5xl sm:text-6xl font-black text-amber-400 tracking-tight" id="walletBalanceDisplay">150</span>
+                <span class="text-xl sm:text-2xl font-bold text-amber-300">Civic Coins</span>
+              </div>
+              <span class="text-xs text-emerald-300 font-bold bg-emerald-950/90 px-3 py-1 rounded-xl border border-emerald-500/40 inline-block">
+                +50 per validated issue • +100 on verified fix
+              </span>
+            </div>
+
+            <p class="text-slate-300 text-xs sm:text-sm max-w-lg leading-relaxed">
+              Earn tokenized incentives for reporting civic hazards. Duplicate submissions that corroborate an active issue still earn <b class="text-amber-300">+10 corroboration coins</b> while deterring duplicate spam!
+            </p>
+
+            <!-- Tier Level Progress -->
+            <div class="pt-2 max-w-md space-y-1.5">
+              <div class="flex justify-between text-xs font-semibold text-slate-300">
+                <span>Tier: <b class="text-amber-400">Civic Guardian (Level 2)</b></span>
+                <span id="tierNextProgress" class="font-mono text-slate-400">150 / 300 to Level 3</span>
+              </div>
+              <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700/80 p-0.5">
+                <div id="tierProgressBar" class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-700 ease-out" style="width: 50%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Redemption CTA Card -->
+          <div class="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
+                <span>🎁 Redeem Cashback & Perks</span>
+              </h3>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-500/30 uppercase">
+                Instant Code
+              </span>
+            </div>
+            
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Exchange your earned civic engagement tokens for transit top-ups, municipal utility discounts, or local business rebates.
+            </p>
+
+            <div class="space-y-2 text-xs text-slate-200">
+              <div class="flex justify-between items-center p-2 rounded-xl bg-black/25 border border-white/5">
+                <span>🎟️ City Metro Card 50% Top-up</span>
+                <span class="font-bold text-amber-300">50 Coins</span>
+              </div>
+              <div class="flex justify-between items-center p-2 rounded-xl bg-black/25 border border-white/5">
+                <span>⚡ Municipal Utility Rebate (₹200)</span>
+                <span class="font-bold text-amber-300">100 Coins</span>
+              </div>
+            </div>
+
+            <button onclick="openRedeemModal()" class="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-3 px-4 rounded-xl text-xs sm:text-sm transition transform hover:-translate-y-0.5 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2">
+              <span>Redeem Cashback / Voucher</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Complaint Capture Section -->
+    <section id="report-section" class="scroll-mt-20">
+      <div class="text-center max-w-2xl mx-auto mb-8 space-y-2">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          Under-a-Minute Capture Form
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Report a Civic Complaint</h2>
+        <p class="text-xs sm:text-sm text-slate-600">
+          Type the issue in natural language. Our modular AI engine automatically classifies the domain, scores urgency, and prevents duplicate spam.
+        </p>
+      </div>
+
+      <!-- Quick Preset Demo Buttons for Evaluators -->
+      <div class="bg-white rounded-3xl p-5 border border-slate-200/90 mb-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
+          <span class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+            <span>⚡ Hackathon Evaluator Quick Presets:</span>
+            <span class="text-slate-400 font-normal">(Click one to auto-fill realistic scenario)</span>
+          </span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <button onclick="applyPreset('pothole')" class="text-left text-xs bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 p-3 rounded-2xl border border-slate-200 transition">
+            <span class="font-bold text-slate-900 block">1. Duplicate Road Hazard</span>
+            <span class="text-slate-500 text-[11px] block mt-0.5">Deep pothole near Metro Pillar 42 on MG Road (triggers duplicate check)</span>
+          </button>
+          <button onclick="applyPreset('electric')" class="text-left text-xs bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 p-3 rounded-2xl border border-slate-200 transition">
+            <span class="font-bold text-slate-900 block">2. Critical Life Hazard</span>
+            <span class="text-slate-500 text-[11px] block mt-0.5">Fallen pole with live sparking wires near primary school gate</span>
+          </button>
+          <button onclick="applyPreset('waterlog')" class="text-left text-xs bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 p-3 rounded-2xl border border-slate-200 transition">
+            <span class="font-bold text-slate-900 block">3. Street Flooding Hazard</span>
+            <span class="text-slate-500 text-[11px] block mt-0.5">Submerged open manhole with knee-deep water on 100 Feet Road</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Submission Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
+          <form id="reportForm" onsubmit="submitReport(event)" class="space-y-5">
+            
+            <!-- Title -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                Issue Title <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="reportTitle" required placeholder="e.g. Deep pothole causing bike skids near Metro Pillar 42"
+                oninput="onFormTextChange()"
+                class="w-full text-sm px-4 py-3 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                Detailed Description <span class="text-rose-500">*</span>
+              </label>
+              <textarea id="reportDescription" rows="3" required placeholder="Describe what you see, the severity, exact location landmarks, or immediate dangers..."
+                oninput="onFormTextChange()"
+                class="w-full text-sm px-4 py-3 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"></textarea>
+            </div>
+
+            <!-- Category & Street Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Category (or let AI auto-detect)
+                </label>
+                <select id="reportCategory" class="w-full text-sm px-4 py-3 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-white">
+                  <option value="damaged roads">Damaged Roads / Potholes</option>
+                  <option value="waterlogging">Waterlogging & Drains</option>
+                  <option value="broken streetlights">Broken Streetlights / Electrical</option>
+                  <option value="waste bins">Overflowing Waste Bins / Sanitation</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Street / Area <span class="text-rose-500">*</span>
+                </label>
+                <select id="reportStreet" class="w-full text-sm px-4 py-3 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-white">
+                  <option value="MG Road">MG Road (Central Ward - Hotspot)</option>
+                  <option value="100 Feet Road">100 Feet Road (Indiranagar)</option>
+                  <option value="Church Street">Church Street</option>
+                  <option value="Residency Road">Residency Road</option>
+                  <option value="Victoria Road">Victoria Road</option>
+                  <option value="Sarjapur Road">Sarjapur Road</option>
+                  <option value="Commercial Street">Commercial Street</option>
+                  <option value="Cubbon Road">Cubbon Road</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Landmark & Simulated GPS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Landmark / Reference
+                </label>
+                <input type="text" id="reportLandmark" placeholder="e.g. Near Metro Pillar 42, Opposite Cafe"
+                  class="w-full text-sm px-4 py-2.5 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none transition">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Simulated GPS Tag
+                </label>
+                <div class="flex items-center space-x-2">
+                  <input type="text" id="reportCoords" readonly value="12.9752, 77.6094"
+                    class="w-full text-xs font-mono px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-slate-100 text-slate-600">
+                  <button type="button" onclick="randomizeGPS()" class="text-xs bg-slate-200 hover:bg-slate-300 px-3.5 py-2.5 rounded-2xl font-bold text-slate-700 transition">
+                    📍 Pin
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Photo Attachment Upload -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                Photo Evidence (Optional)
+              </label>
+
+              <!-- Hidden native file input -->
+              <input type="file" id="photoFileInput" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+
+              <!-- Upload Drop Zone -->
+              <div id="uploadDropZone"
+                onclick="document.getElementById('photoFileInput').click()"
+                ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+                class="group relative flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:border-emerald-500 hover:bg-emerald-50/30 transition cursor-pointer select-none">
+
+                <!-- Image Preview -->
+                <div class="relative flex-shrink-0">
+                  <img id="imagePreview"
+                    src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=300&auto=format&fit=crop&q=80"
+                    alt="Incident photo preview"
+                    class="w-20 h-16 object-cover rounded-xl border border-slate-300 shadow-sm">
+                  <!-- Remove button (shown only when user uploads) -->
+                  <button type="button" id="removePhotoBtn"
+                    onclick="removeUploadedPhoto(event)"
+                    class="hidden absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-xs font-black flex items-center justify-center shadow transition">
+                    ×
+                  </button>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <span id="uploadLabel" class="font-semibold text-slate-700 text-xs block truncate">
+                    Click or drag &amp; drop a photo here
+                  </span>
+                  <span id="uploadSubLabel" class="text-[11px] text-slate-400 block mt-0.5">
+                    JPG, PNG, WEBP — max 5 MB. Or use a demo preset →
+                  </span>
+
+                  <!-- Demo preset mini-buttons -->
+                  <div id="demoBtns" class="flex flex-wrap gap-1.5 mt-2">
+                    <button type="button" onclick="applyDemoPhoto(1, event)" class="text-[10px] font-bold bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 px-2 py-0.5 rounded-lg text-slate-600 transition">🕳️ Pothole</button>
+                    <button type="button" onclick="applyDemoPhoto(2, event)" class="text-[10px] font-bold bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 px-2 py-0.5 rounded-lg text-slate-600 transition">🌊 Flooding</button>
+                    <button type="button" onclick="applyDemoPhoto(3, event)" class="text-[10px] font-bold bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 px-2 py-0.5 rounded-lg text-slate-600 transition">💡 Streetlight</button>
+                    <button type="button" onclick="applyDemoPhoto(4, event)" class="text-[10px] font-bold bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 px-2 py-0.5 rounded-lg text-slate-600 transition">🗑️ Garbage</button>
+                  </div>
+                </div>
+
+                <!-- Upload icon overlay -->
+                <svg class="w-5 h-5 text-slate-300 group-hover:text-emerald-400 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 text-sm sm:text-base cursor-pointer">
+              <span>🚀 Submit & Analyze via AI Engine</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- AI Live Pre-Flight Assistant Card -->
+        <div class="lg:col-span-4 space-y-5">
+          <div class="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>AI Pre-Flight Inspector</span>
+              </span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Neural Heuristic</span>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+              As you compose your complaint, our background analyzer evaluates keywords for domain classification, hazard urgency, and anti-spam verification:
+            </p>
+
+            <div class="space-y-2.5 pt-1 text-xs">
+              <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80">
+                <span class="text-slate-400 block text-[11px] mb-0.5">Detected Domain:</span>
+                <span id="aiLiveCategory" class="font-bold text-emerald-400 text-xs sm:text-sm">Damaged Roads (Auto-matched)</span>
+              </div>
+
+              <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80">
+                <span class="text-slate-400 block text-[11px] mb-0.5">Safety Urgency Probe:</span>
+                <span id="aiLiveUrgency" class="font-bold text-amber-400 text-xs sm:text-sm">Standard / Medium Urgency</span>
+              </div>
+
+              <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80">
+                <span class="text-slate-400 block text-[11px] mb-0.5">Projected Reward:</span>
+                <span id="aiLiveReward" class="font-bold text-amber-300 text-xs sm:text-sm">+50 Civic Coins upon verification</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-emerald-950/70 rounded-2xl border border-emerald-500/30 text-[11px] text-emerald-200 leading-snug">
+              💡 <b>Anti-Spam Guarantee:</b> Duplicate submissions that corroborate an active issue still earn <b class="text-white">+10 corroboration coins</b> while deterring duplicate spam!
+            </div>
+          </div>
+
+          <!-- Authority Quick Link Box -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs text-xs space-y-2">
+            <span class="font-bold text-slate-900 block text-sm">Municipal Official?</span>
+            <p class="text-slate-500 leading-relaxed">
+              Log into the authority portal to inspect hotspot clusters, assign work orders, and mark complaints resolved.
+            </p>
+            <a href="/admin.html" class="inline-flex items-center space-x-1 text-emerald-700 hover:text-emerald-800 font-bold pt-1">
+              <span>Open Municipal Command Center</span>
+              <span>&rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tracking Section -->
+    <section id="tracking-section" class="scroll-mt-20">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              Transparent Municipal Tracker
+            </span>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1">Track Live Complaint Progress</h2>
+            <p class="text-xs text-slate-500">Search any ticket reference ID to inspect AI priority reasoning and resolution milestones.</p>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="flex items-center space-x-2">
+            <input type="text" id="trackInput" placeholder="Enter ID (e.g. REP-1001)"
+              class="text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none w-48 sm:w-56">
+            <button onclick="lookupReport()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-2xl transition cursor-pointer">
+              Track
+            </button>
+          </div>
+        </div>
+
+        <!-- Featured Ticket Selector Pills -->
+        <div>
+          <span class="text-xs font-bold text-slate-600 block mb-2">Or select from featured scenarios:</span>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="loadTrackTicket('REP-1001')" class="text-xs bg-slate-100 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-700 transition">
+              REP-1001 (MG Road Pothole - In Progress)
+            </button>
+            <button onclick="loadTrackTicket('REP-1002')" class="text-xs bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl border border-purple-200 font-semibold text-purple-800 transition">
+              REP-1002 (AI Duplicate of #1001)
+            </button>
+            <button onclick="loadTrackTicket('REP-1005')" class="text-xs bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl border border-rose-200 font-semibold text-rose-800 transition">
+              REP-1005 (Critical Sparking Wire)
+            </button>
+            <button onclick="loadTrackTicket('REP-1025')" class="text-xs bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 font-semibold text-emerald-800 transition">
+              REP-1025 (Resolved Water Pipe Burst)
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Track Card Container -->
+        <div id="trackResultContainer" class="pt-2"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Submission Success Modal -->
+  <div id="successModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
+        ✓
+      </div>
+      <div class="text-center space-y-1">
+        <h3 class="text-xl font-black text-slate-900 tracking-tight">Complaint Processed by AI</h3>
+        <p class="text-xs text-slate-500">Your complaint has been classified, scored, and logged to the municipal queue.</p>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 text-xs">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+          <span class="text-slate-500">Ticket Reference ID:</span>
+          <span id="modalTicketId" class="font-mono font-black text-slate-900 text-sm">REP-1041</span>
+        </div>
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+          <span class="text-slate-500">AI Priority Level:</span>
+          <span id="modalPriority" class="font-bold px-2 py-0.5 rounded text-white bg-rose-600">High Priority</span>
+        </div>
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+          <span class="text-slate-500">Duplicate Check:</span>
+          <span id="modalDuplicateStatus" class="font-bold text-emerald-700">Unique Report (Verified)</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-500">Civic Coins Credited:</span>
+          <span id="modalTokens" class="font-extrabold text-amber-600 text-sm">+50 Coins 🪙</span>
+        </div>
+      </div>
+
+      <!-- Prominent AI Reasoning Callout Box -->
+      <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 leading-relaxed" id="modalReasoningBox">
+        <b>AI Reasoning:</b> High priority assigned due to reported vehicular hazard.
+      </div>
+
+      <div class="pt-2">
+        <button onclick="closeSuccessModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-xs transition cursor-pointer shadow-md">
+          Done & Track Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reward Redemption Modal -->
+  <div id="redeemModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">🪙</span>
+          <h3 class="text-lg font-bold text-slate-900">Redeem Civic Rewards</h3>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+            Mock Partner Demo
+          </span>
+          <button onclick="closeRedeemModal()" aria-label="Close redemption modal" class="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer">&times;</button>
+        </div>
+      </div>
+
+      <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-[11px] text-amber-900 leading-snug">
+        ℹ️ <b>Transparency Notice:</b> This feature demonstrates how municipal corporations partner with transit and utility providers. Redemptions issue simulated voucher tokens.
+      </div>
+
+      <div class="space-y-3">
+        <!-- Reward Option 1 -->
+        <div class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="font-bold text-slate-900 text-xs sm:text-sm block">🎟️ City Metro Card 50% Top-up</span>
+            <span class="text-[11px] text-slate-500">Valid on all Bangalore Metro green & purple lines</span>
+            <span class="font-bold text-amber-600 text-xs block mt-1">Cost: 50 Coins</span>
+          </div>
+          <button onclick="executeRedemption('City Metro Card 50% Top-up', 50)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition cursor-pointer shadow-xs">
+            Redeem
+          </button>
+        </div>
+
+        <!-- Reward Option 2 -->
+        <div class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="font-bold text-slate-900 text-xs sm:text-sm block">⚡ Municipal Utility Rebate (₹200)</span>
+            <span class="text-[11px] text-slate-500">Direct deduction on next electricity or water bill</span>
+            <span class="font-bold text-amber-600 text-xs block mt-1">Cost: 100 Coins</span>
+          </div>
+          <button onclick="executeRedemption('Municipal Utility Rebate (₹200)', 100)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition cursor-pointer shadow-xs">
+            Redeem
+          </button>
+        </div>
+
+        <!-- Reward Option 3 -->
+        <div class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="font-bold text-slate-900 text-xs sm:text-sm block">☕ Local Green Cafe Voucher</span>
+            <span class="text-[11px] text-slate-500">Free artisan beverage at partnered eco-cafes</span>
+            <span class="font-bold text-amber-600 text-xs block mt-1">Cost: 30 Coins</span>
+          </div>
+          <button onclick="executeRedemption('Local Green Cafe Voucher', 30)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition cursor-pointer shadow-xs">
+            Redeem
+          </button>
+        </div>
+      </div>
+
+      <!-- Redemption Result Display Box -->
+      <div id="voucherResultBox" class="hidden p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+        <span class="text-emerald-800 font-bold text-xs block">🎉 Redemption Successful!</span>
+        <span class="text-slate-500 text-[11px] block">Present this voucher code to partner merchant:</span>
+        <div id="voucherCodeDisplay" class="font-mono text-base font-black text-slate-900 bg-white py-2 px-4 rounded-xl border border-emerald-300 inline-block shadow-sm">
+          CV-MTR-8821
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      <div>
+        <span class="font-bold text-slate-800">CivicLoop Prototype</span> • Built for the "From Complaints to Action" Civic Tech Challenge.
+      </div>
+      <div class="flex space-x-6">
+        <a href="/admin.html" class="hover:text-emerald-600 font-semibold">Authority Portal</a>
+        <a href="#report-section" class="hover:text-emerald-600 font-semibold">Report Issue</a>
+        <a href="#wallet-section" class="hover:text-emerald-600 font-semibold">Civic Wallet</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modular Citizen Controller -->
+  <script src="/js/citizen.js"></script>
+</body>
+</html>
